@@ -6,6 +6,8 @@ import transporter from '../config/nodemailer.js';
 
 
 
+// ... imports
+
 export const register = async (req, res) => {
     const { name, email, password } = req.body;
 
@@ -21,14 +23,15 @@ export const register = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Generate token before saving
+        // CHANGE 1: Remove token generation here. We don't save tokens in the DB for users anymore.
         const tempUser = new userModel({ name, email, password: hashedPassword });
-        const token = jwt.sign({ id: tempUser._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-        tempUser.token = token;
-
+        
+        // CHANGE 2: Save user first
         await tempUser.save();
 
-        // Set token in cookie
+        // CHANGE 3: Create the token for the cookie (Session)
+        const token = jwt.sign({ id: tempUser._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
         res.cookie('token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -36,23 +39,29 @@ export const register = async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
 
-        // Send welcome email
-        const mailOptions = {
-            from: process.env.SENDEREMAIL,
-            to: email,
-            subject: 'Welcome to our Hacker website',
-            text: `Hello ${name}, Welcome to our website! You have successfully registered.`
-        };
+        // CHANGE 4: Wrap email in its own try-catch so it doesn't fail the whole registration if email fails
+        try {
+            const mailOptions = {
+                from: process.env.SENDEREMAIL,
+                to: email,
+                subject: 'Welcome to our Hacker website',
+                text: `Hello ${name}, Welcome to our website! You have successfully registered.`
+            };
+            await transporter.sendMail(mailOptions);
+        } catch (emailError) {
+            console.log("Email error:", emailError.message);
+            // We continue success even if email fails
+        }
 
-        await transporter.sendMail(mailOptions);
-        console.log("Mail sent successfully.");
-
-        return res.json({ success: true, message: 'Registered and email sent successfully.' });
+        return res.json({ success: true, message: 'Registered successfully.' });
 
     } catch (error) {
         return res.json({ success: false, message: error.message });
     }
 };
+
+
+
 export const login = async (req, res) => {
     const { email, password } = req.body;
 
@@ -71,8 +80,8 @@ export const login = async (req, res) => {
             return res.json({ success: false, message: 'Invalid password' });
         }
 
-        // Send existing token stored in DB
-        const token = user.token;
+        // CHANGE 5: Generate a NEW token instead of reading 'user.token'
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
         res.cookie('token', token, {
             httpOnly: true,
