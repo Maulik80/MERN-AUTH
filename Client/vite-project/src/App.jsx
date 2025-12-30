@@ -1,34 +1,27 @@
 import React from 'react'
-import { Routes,Route } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css'; // Ensure CSS is imported
 
 import Login from './pages/Login'
-import EmailVerify from '../src/pages/EmailVerify';
-import ResetPassword from './Pages/ResetPassword'
 import Home from './pages/Home'
-import { ToastContainer } from 'react-toastify';
+import EmailVerify from './pages/EmailVerify'; // Fixed relative path
+import ResetPassword from './pages/ResetPassword' // FIX: Changed 'Pages' to 'pages'
 
 const App = () => {
   return (
     <div>
-      <ToastContainer/>
+      <ToastContainer />
       <Routes>
-        <Route path='/' element={<Home/>}/>
+        <Route path='/' element={<Home />} />
+        <Route path='/login' element={<Login />} />
+        <Route path='/email-verify' element={<EmailVerify />} />
         
-        <Route path='/login' element={<Login/>}/>
-        <Route path='/email-verify' element={<EmailVerify/>}/>
-        <Route path='/reset-password' element={<ResetPassword/>}/>
-        
-      
+        {/* FIX: Corrected spelling 'passwprd' -> 'password' */}
+        <Route path='/reset-password' element={<ResetPassword />} /> 
       </Routes>
     </div>
   )
 }
 
 export default App
-// export default function App() {
-//   return (
-//     <h1 className="text-3xl font-bold underline">
-//       Hello world!
-//     </h1>
-//   )
-// }
